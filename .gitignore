@@ -1,0 +1,34 @@
+# Publish only the project files below. This also keeps arbitrary local build
+# directory names and historical workspace records out of version control.
+# Add new shared project paths here when extending the repository.
+/*
+!/.gitignore
+!/README.md
+!/LICENSE
+!/build-nova.py
+!/nova_common.py
+!/nova-build.env.example
+!/toolchain.json
+!/configs/
+!/tests/
+
+# Each user copies the example to this private, machine-specific settings file.
+# Keep personal paths in nova-build.env; the shared example stays visible to Git.
+/nova-build.env
+
+# Generated outputs and downloaded/installed tools are local workspace data.
+/build/
+/out/
+/artifacts/
+/toolchains/
+/downloads/
+/cargo/
+/bindgen-target/
+/logs/
+
+# Share the tested seed; keep copies such as configs/my-host.config local.
+/configs/*
+!/configs/README.md
+!/configs/nova-kvm.config
+__pycache__/
+*.py[cod]

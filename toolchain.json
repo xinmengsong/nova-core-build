@@ -1,0 +1,14 @@
+{
+  "architecture": "x86_64",
+  "llvm": "22.1.8",
+  "rust": "1.97.0",
+  "bindgen": "0.72.1",
+  "python_minimum": "3.9",
+  "python_tested": "3.13.15",
+  "archive": {
+    "name": "llvm-22.1.8-rust-1.97.0-x86_64.tar.xz",
+    "url": "https://kernel.org/pub/tools/llvm/rust/files/llvm-22.1.8-rust-1.97.0-x86_64.tar.xz",
+    "sha256": "16b7ab0c416561942ae6bb2a8dc9360b8958f1a082aa05c1ab7dfdc8e12c80c1"
+  },
+  "notes": "Tested compiler versions, not an automatic installer or a source revision lock. Install bindgen separately; keep the Rust library sources matched to rustc."
+}
