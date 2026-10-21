@@ -178,6 +178,63 @@ Preserve the original build directory's location. Rebuilding after moving it
 can change build IDs. Changes to built-in code or PF/VFIO dependencies require
 a full kernel deployment when those IDs no longer match the running host.
 
+## Rust validation and doctests
+
+Run the three Rust checks with the standalone validation script. It requires
+Python 3.13 on the build machine and uses the pinned toolchain above. Select a
+KVM host with SSH key authentication, a known SSH host key, passwordless sudo,
+Python 3.9 or newer, and system libvirt with `/usr/libexec/qemu-kvm`.
+
+Configure the target once:
+
+```bash
+cp -n rust-checks.json.example rust-checks.json
+# Edit ssh_target in rust-checks.json to your user@kvm-host.
+./check-rust.py
+```
+
+`rust-checks.json` is private and ignored by Git. Target selection follows
+`--ssh-target` > `NOVA_RUST_SSH_TARGET` > `rust-checks.json`. The script locates
+the private file beside itself, so it can be invoked from another directory.
+The shared example contains a placeholder target.
+
+The script performs:
+
+1. `make LLVM=1 rustfmtcheck`, checking formatting without modifying source.
+2. A complete `bzImage modules` build with `CLIPPY=1`, `W=1`, KUnit and Rust
+   doctests enabled. Missing safety documentation is treated as an error.
+3. Execution of the generated doctests in the permanent `nova-rust-doctest`
+   libvirt VM. The official KUnit parser checks the output, and every generated
+   case must execute exactly once and pass.
+
+Defaults use the sibling `../nova-core` checkout, `configs/nova-kvm.config`,
+the pinned compiler under `toolchains/`, and a dedicated `build-rust-checks/`
+output directory. Existing configurations and build outputs are reused. Use
+`--source`, `--config`, `--toolchain`, `--build-dir`, `--jobs`, or `--timeout`
+to override these settings; `./check-rust.py --help` lists the options. Dirty
+source is allowed and fingerprinted; changing it during a run fails validation.
+Each invocation saves logs, source/configuration identity and `result.json`
+under `build-rust-checks/rust-checks-runs/<run-id>/`.
+
+The controller retains VM settings, the XML definition, kernel artifacts and
+links to run logs under `vms/nova-rust-doctest/`. The host-side
+`doctest-vm.py` manages `/var/lib/libvirt/images/nova-rust-doctest/`, preserving
+the VM's UUID, kernel archives and per-run results. The diskless VM has two
+vCPUs and 2 GiB of RAM. It boots each test kernel and powers off after the
+suite; its definition remains registered, with autostart disabled. Existing
+active or unmanaged domains are rejected. Use `--vm-name` and `--vm-dir` for
+another dedicated validation VM.
+
+To rerun the last kernel directly on the KVM host:
+
+```bash
+sudo virsh -c qemu:///system start nova-rust-doctest
+```
+
+The latest console is `/var/lib/libvirt/images/nova-rust-doctest/console.log`.
+Doctests execute documentation examples; HTML API documentation is generated
+separately with the kernel's `make LLVM=1 rustdoc` target.
+
 ## Artifacts and local files
 
 Default bundles are `<build-dir>/artifacts/nova-<tag>.tar.gz` for a kernel and
@@ -189,6 +246,8 @@ It retains format version 1 for the existing Nova deployment tools.
 This repository's root uses an explicit Git allowlist because it can also
 contain existing build workspaces. Local `nova-build.env`, output directories,
 toolchains, downloads, artifacts, and historical build records are ignored.
+Private `rust-checks.json`, validation build outputs and generated `vms/`
+state are also ignored.
 Add new project paths to `.gitignore` when extending the tooling. Kernel
 sources, deployment tools, host settings, and firmware are managed separately.
 
@@ -206,11 +265,12 @@ Review what Git would include before committing or pushing:
 ```bash
 git status --short --untracked-files=all
 git add --dry-run .
-git check-ignore nova-build.env build/.config configs/my-host.config
+git check-ignore nova-build.env build/.config configs/my-host.config \
+  rust-checks.json build-rust-checks/.config vms/nova-rust-doctest/domain.xml
 ```
 
 The first two commands should list only shared project files. The last command
-should print all three local paths, confirming that the ignore rules cover
+should print all six local paths, confirming that the ignore rules cover
 them even before those files exist.
 
 ## Checks

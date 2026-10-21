@@ -6,8 +6,11 @@
 !/README.md
 !/LICENSE
 !/build-nova.py
+!/check-rust.py
+!/doctest-vm.py
 !/nova_common.py
 !/nova-build.env.example
+!/rust-checks.json.example
 !/toolchain.json
 !/configs/
 !/tests/
@@ -15,6 +18,7 @@
 # Each user copies the example to this private, machine-specific settings file.
 # Keep personal paths in nova-build.env; the shared example stays visible to Git.
 /nova-build.env
+/rust-checks.json
 
 # Generated outputs and downloaded/installed tools are local workspace data.
 /build/

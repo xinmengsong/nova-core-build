@@ -1,0 +1,3 @@
+{
+  "ssh_target": "user@kvm-host"
+}
